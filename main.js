@@ -107,7 +107,11 @@ Apify.main(async () => {
                 };
                 const email = jThis.find('.email-business').attr('href');
                 const businessSlug = jThis.find('a.business-name').attr('href');
-                const address = getText('.adr')
+
+                // const addrElem = '<span class="address"><span>1070 South Kimball Avenue Suite 131</span>Southlake, TX 76092</span>';
+                // Get address based on addrElem html
+                const address = jThis.find('.address').find('span').toArray().map((span) => $(span).text().trim())
+                    .join(' ')
                     || jThis.find("#details-card p:contains('Address:')")
                         .text()
                         .replace('Address:', '')
