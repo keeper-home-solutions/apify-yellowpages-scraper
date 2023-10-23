@@ -2,7 +2,8 @@
     "name": "actor-yellowpages-scraper",
     "version": "1.0.0",
     "dependencies": {
-        "apify": "^2.3.2"
+        "apify": "^2.3.2",
+        "axios": "^1.5.1"
     },
     "devDependencies": {
         "@apify/eslint-config": "^0.3.1",

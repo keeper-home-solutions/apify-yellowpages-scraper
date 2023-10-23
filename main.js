@@ -1,10 +1,27 @@
 const Apify = require('apify');
+const axios = require('axios');
 
 const { log } = Apify.utils;
 
 Apify.main(async () => {
     // Initialize
-    const input = await Apify.getInput();
+
+    // eslint-disable-next-line prefer-const
+    let input = await Apify.getInput();
+
+    if (input?.startUrls[0]?.requestsFromUrl) {
+        const externalUrls = await axios.get(input.startUrls[0].requestsFromUrl).then((resp) => resp.data);
+        let urlArr = [];
+        try {
+            urlArr = JSON.parse(externalUrls);
+        } catch (e) {
+            urlArr = externalUrls.split('\n').filter((link) => link !== '').map((link) => {
+                return { url: link };
+            });
+        }
+        input.startUrls = urlArr;
+    }
+
     const dataset = await Apify.openDataset();
     const requestQueue = await Apify.openRequestQueue();
 
@@ -89,13 +106,17 @@ Apify.main(async () => {
                     const text = jThis.find(selector).text().trim();
                     return text.length > 0 ? text : undefined;
                 };
+                const emails = jThis.find('.email-business').attr('href');
                 const businessSlug = jThis.find('a.business-name').attr('href');
                 const address = getText('.adr')
                     || jThis
                         .find('.adr')
                         .nextUntil('p')
                         .toArray()
-                        .map((l) => $(l).text().trim())
+                        .map((l) => {
+                            const txt = $(l).text().trim();
+                            return txt.length > 0 ? txt.padEnd(txt.length + 1, ' ') : undefined;
+                        })
                         .join(', ');
                 const categories = jThis
                     .find('.categories a')
@@ -114,6 +135,7 @@ Apify.main(async () => {
                     url: businessSlug ? `https://www.yellowpages.com${businessSlug}` : undefined,
                     name: getText('.info .n a'),
                     address: address.length > 0 ? address : undefined,
+                    emails: emails ? emails.split(':')[1].split(',') : undefined,
                     phone: getText('.info .phone'),
                     website,
                     rating: rating ? parseRating(rating) : undefined,
@@ -175,4 +197,6 @@ Apify.main(async () => {
         },
     });
     await crawler.run();
+
+
 });
