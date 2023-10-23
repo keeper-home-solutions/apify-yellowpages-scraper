@@ -103,7 +103,7 @@ Apify.main(async () => {
             for (const r of resultElems.toArray()) {
                 const jThis = $(r);
                 const getText = (selector) => {
-                    const text = jThis.find(selector).text().trim();
+                    const text = jThis.find(selector).text();
                     return text.length > 0 ? text : undefined;
                 };
                 const businessSlug = jThis.find('a.business-name').attr('href');
@@ -126,20 +126,20 @@ Apify.main(async () => {
                     .toArray()
                     .map((c) => $(c).text().trim());
                 const rating = jThis.find('.result-rating').attr('class');
-                const rCount = getText('.result-rating .count');
+                const rCount = getText('.result-rating .count').trim();
                 const website = jThis
                     .find('a.track-visit-website')
                     .attr('href');
-                const reviewSnippet = getText('.snippet');
+                const reviewSnippet = getText('.snippet').trim();
                 const isInfoSnippet = reviewSnippet && reviewSnippet.includes('From Business');
                 const image = jThis.find('a.photo img').attr('src');
                 const result = {
-                    isAd: getText('.ad-pill') === 'Ad' || undefined,
+                    isAd: getText('.ad-pill').trim() === 'Ad' || undefined,
                     url: businessSlug ? `https://www.yellowpages.com${businessSlug}` : undefined,
-                    name: getText('.info .n a'),
-                    address: address.length > 0 ? address : undefined,
+                    name: getText('.info .n a').trim(),
+                    address: address.length > 0 && !address.includes('Serving the') ? address : undefined,
                     email: email ? email.split(':')[1] : undefined,
-                    phone: getText('.info .phone'),
+                    phone: getText('.info .phone').trim(),
                     website,
                     rating: rating ? parseRating(rating) : undefined,
                     ratingCount: rCount
