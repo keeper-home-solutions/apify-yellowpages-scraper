@@ -4,8 +4,6 @@ const axios = require('axios');
 const { log } = Apify.utils;
 
 Apify.main(async () => {
-    // Initialize
-
     // eslint-disable-next-line prefer-const
     let input = await Apify.getInput();
 
