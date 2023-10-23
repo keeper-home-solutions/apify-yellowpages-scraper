@@ -1,5 +1,6 @@
 const Apify = require('apify');
 const axios = require('axios');
+const cheerio = require('cheerio');
 
 const { log } = Apify.utils;
 
@@ -24,8 +25,8 @@ Apify.main(async () => {
     const requestQueue = await Apify.openRequestQueue();
 
     // Check input
-    const sOk = input.search && input.search.trim().length > 0;
-    const lOk = input.location && input.location.trim().length > 0;
+    const sOk = input?.search && input?.search.trim().length > 0;
+    const lOk = input?.location && input?.location.trim().length > 0;
 
     if ((!sOk || !lOk) && !input.startUrls) {
         throw new Error(
@@ -34,7 +35,7 @@ Apify.main(async () => {
     }
 
     // Add URLs to requestQueue
-    if (input.search && input.location) {
+    if (input?.search && input?.location) {
         const term = encodeURIComponent(input.search.trim());
         const loc = encodeURIComponent(input.location.trim());
         await requestQueue.addRequest({
@@ -105,15 +106,18 @@ Apify.main(async () => {
                     const text = jThis.find(selector).text().trim();
                     return text.length > 0 ? text : undefined;
                 };
-                const email = jThis.find('.email-business').attr('href');
                 const businessSlug = jThis.find('a.business-name').attr('href');
+
+                // Get extended data from detail page
+                const res = await axios.get(`https://www.yellowpages.com${businessSlug}`);
+                const d = cheerio.load(res.data);
+                const email = d('.email-business').attr('href');
 
                 // const addrElem = '<span class="address"><span>1070 South Kimball Avenue Suite 131</span>Southlake, TX 76092</span>';
                 // Get address based on addrElem html
-                const address = jThis.find('.adr').find('span').toArray().map((span) => $(span).text().trim())
-                    .join(' ')
+                const address = getText('.adr')
                 // const address = getText('.adr')
-                    || jThis.find("#details-card p:contains('Address:')")
+                    || d("#details-card p:contains('Address:')")
                         .text()
                         .replace('Address:', '')
                         .trim();
