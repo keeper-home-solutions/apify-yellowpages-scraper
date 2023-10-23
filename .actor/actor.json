@@ -17,6 +17,7 @@
                         "fields": [
                             "image",
                             "name",
+                            "email",
                             "address",
                             "phone",
                             "website",
@@ -37,6 +38,10 @@
                             { "label": "Name",
                                 "format": "text",
                                 "field":  "name"
+                            },
+                            { "label": "Email",
+                                "format": "text",
+                                "field":  "email"
                             },
                             { "label": "Address",
                                 "format": "text",

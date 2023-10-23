@@ -105,18 +105,16 @@ Apify.main(async () => {
                     const text = jThis.find(selector).text().trim();
                     return text.length > 0 ? text : undefined;
                 };
-                const emails = $('.email-business').attr('href');
+                const email = jThis.find('.email-business').attr('href');
                 const businessSlug = jThis.find('a.business-name').attr('href');
 
                 // const testElem = '<section id="details-card"><h2 class="section-title">Details</h2><p class="phone"><span>Phone: </span> (972) 460-6860</p><p><span>Address: </span>1070 South Kimball Avenue Suite 131, Southlake, TX 76092</p><p class="website"><span>Website: </span><a href="http://www.berkeys.com" data-analytics="{&quot;adclick&quot;:true,&quot;events&quot;:&quot;event7,event5&quot;,&quot;category&quot;:&quot;8008999&quot;,&quot;impression_id&quot;:&quot;9598ad2c-aa8d-4481-afcb-80ad733d9842&quot;,&quot;listing_id&quot;:&quot;1001861031254&quot;,&quot;item_id&quot;:-1,&quot;listing_type&quot;:&quot;sub&quot;,&quot;ypid&quot;:&quot;478332101&quot;,&quot;content_provider&quot;:&quot;GUMP&quot;,&quot;srid&quot;:&quot;00be56a0-d9dc-4b8c-8c8a-97d0b73e195e&quot;,&quot;item_type&quot;:&quot;listing&quot;,&quot;lhc&quot;:&quot;8008999&quot;,&quot;ldir&quot;:&quot;DAMZ&quot;,&quot;rate&quot;:5,&quot;hasTripAdvisor&quot;:false,&quot;pid&quot;:&quot;800000002273642818&quot;,&quot;geography&quot;:&quot;Southlake, TX&quot;,&quot;mip_claimed_status&quot;:&quot;mip_claimed&quot;,&quot;mip_ypid&quot;:&quot;478332101&quot;,&quot;advertiser_listing_id&quot;:&quot;1001861031254&quot;,&quot;advertiser_ypid&quot;:&quot;478332101&quot;,&quot;click_id&quot;:6,&quot;module&quot;:&quot;details&quot;,&quot;target&quot;:&quot;website&quot;,&quot;act&quot;:2,&quot;dku&quot;:&quot;http://www.berkeys.com&quot;,&quot;supermedia&quot;:true,&quot;LOC&quot;:&quot;http://www.berkeys.com&quot;}" rel="nofollow noopener" target="_blank" data-impressed="1">http://www.berkeys.com</a></p></section>';
 
                 // Get address from testElem by searching "Address: " and removing the element that includes the search string
                 const address = getText('.adr')
-                    || jThis.find('#details-card')
-                        .split('Address: ')
-                        .slice(1)
-                        .join('Address: ')
-                        .split('<')[0]
+                    || jThis.find("#details-card p:contains('Address:')")
+                        .text()
+                        .replace('Address:', '')
                         .trim();
                     // || jThis.find('#details-card').
                     // || jThis
@@ -145,7 +143,7 @@ Apify.main(async () => {
                     url: businessSlug ? `https://www.yellowpages.com${businessSlug}` : undefined,
                     name: getText('.info .n a'),
                     address: address.length > 0 ? address : undefined,
-                    emails: emails ? emails.split(':')[1].split(',') : undefined,
+                    email: email ? email.split(':')[1] : undefined,
                     phone: getText('.info .phone'),
                     website,
                     rating: rating ? parseRating(rating) : undefined,
