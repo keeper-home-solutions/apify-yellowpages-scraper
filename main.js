@@ -114,11 +114,11 @@ Apify.main(async () => {
                 const email = d('.email-business').attr('href');
 
                 let address = null;
-                const addrElem = jThis.find('.adr');
-                if (addrElem.children().length > 0) {
-                    address = addrElem.children().get().map((t) => t.textContent).join(', ');
+                if (jThis.find('.adr').children().length > 0) {
+                    address = jThis.find('.adr').children().get().map((t) => t.textContent)
+                        .join(', ');
                 } else {
-                    address = addrElem.contents().text().trim();
+                    address = jThis.find('.adr').contents().text().trim();
                 }
                 const categories = jThis
                     .find('.categories a')
