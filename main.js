@@ -116,9 +116,6 @@ Apify.main(async () => {
                 // Get address based on addrElem html
                 const address = jThis.find('.adr')
                     .contents()
-                    .filter(function () {
-                        return this.nodeType === 3;
-                    })
                     .text()
                     ?.trim();
 
