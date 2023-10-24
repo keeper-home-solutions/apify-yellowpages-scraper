@@ -114,14 +114,13 @@ Apify.main(async () => {
                 const email = d('.email-business').attr('href');
 
                 let address = null;
-                if (jThis.find('.adr').children().length > 0) {
-                    address = jThis.find('.adr').children().get().map((t) => {
-                        log.info(t.innerHTML);
-                        return t.textContent;
-                    })
+                const addrElem = jThis.find('.adr');
+                if (addrElem.children().length > 0) {
+                    log.info(JSON.stringify(addrElem.children().get().map((t) => t.textContent)));
+                    address = addrElem.children().get().map((t) => t.textContent)
                         .join(', ');
                 } else {
-                    address = jThis.find('.adr').contents().text().trim();
+                    address = addrElem.contents().text().trim();
                 }
                 const categories = jThis
                     .find('.categories a')
