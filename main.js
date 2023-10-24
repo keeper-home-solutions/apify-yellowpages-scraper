@@ -113,13 +113,13 @@ Apify.main(async () => {
                 const d = cheerio.load(res.data);
                 const email = d('.email-business').attr('href');
 
-                // Get address based on addrElem html
-                const address = jThis.find('.adr')
-                    .contents()
-                    .text()
-                    .trim() || jThis.find('.adr')?.children()?.get()?.map((t) => t.textContent)
-                    ?.join(' ');
-
+                let address = null;
+                const addrElem = jThis.find('.adr');
+                if (addrElem.children().length > 0) {
+                    address = addrElem.children().get().map((t) => t.textContent).join(' ');
+                } else {
+                    address = addrElem.contents().text().trim();
+                }
                 const categories = jThis
                     .find('.categories a')
                     .toArray()
