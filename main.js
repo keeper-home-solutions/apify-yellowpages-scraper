@@ -108,6 +108,8 @@ Apify.main(async () => {
                 };
                 const businessSlug = jThis.find('a.business-name').attr('href');
 
+                log(`Processing result for ${getText('.info .n a')?.trim()}`);
+
                 // Get extended data from detail page
                 const res = await axios.get(`https://www.yellowpages.com${businessSlug}`);
                 const d = cheerio.load(res.data);
