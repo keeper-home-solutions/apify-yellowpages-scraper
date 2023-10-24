@@ -116,7 +116,7 @@ Apify.main(async () => {
                 let address = null;
                 if (jThis.find('.adr').children().length > 0) {
                     address = jThis.find('.adr').children().get().map((t) => {
-                        log.info(JSON.stringify(t));
+                        log.info(t.innerHTML);
                         return t.textContent;
                     })
                         .join(', ');
