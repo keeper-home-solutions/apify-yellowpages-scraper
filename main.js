@@ -117,7 +117,8 @@ Apify.main(async () => {
                 const address = jThis.find('.adr')
                     .contents()
                     .text()
-                    ?.trim();
+                    .trim() || jThis.find('.adr')?.children()?.get()?.map((t) => t.textContent)
+                    ?.join(' ');
 
                 const categories = jThis
                     .find('.categories a')
