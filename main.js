@@ -116,8 +116,14 @@ Apify.main(async () => {
                 let address = null;
                 const addrElem = jThis.find('.adr');
                 if (addrElem.children().length > 0) {
-                    log.info(JSON.stringify(addrElem.children().get().map((t) => t.textContent)));
-                    address = addrElem.children().get().map((t) => t.textContent)
+                    address = addrElem
+                        .children()
+                        .toArray()
+                        .map((c) => {
+                            const text = $(c).text().trim();
+                            return text.length > 0 ? text : undefined;
+                        })
+                        .filter((t) => t)
                         .join(', ');
                 } else {
                     address = addrElem.contents().text().trim();
