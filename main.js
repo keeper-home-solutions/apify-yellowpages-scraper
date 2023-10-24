@@ -113,14 +113,15 @@ Apify.main(async () => {
                 const d = cheerio.load(res.data);
                 const email = d('.email-business').attr('href');
 
-                // const addrElem = '<span class="address"><span>1070 South Kimball Avenue Suite 131</span>Southlake, TX 76092</span>';
                 // Get address based on addrElem html
-                const address = getText('.adr')
-                // const address = getText('.adr')
-                    || d("#details-card p:contains('Address:')")
-                        .text()
-                        .replace('Address:', '')
-                        .trim();
+                const address = jThis.find('.adr')
+                    .contents()
+                    .filter(function () {
+                        return this.nodeType === 3;
+                    })
+                    .text()
+                    ?.trim();
+
                 const categories = jThis
                     .find('.categories a')
                     .toArray()
