@@ -108,8 +108,6 @@ Apify.main(async () => {
                 };
                 const businessSlug = jThis.find('a.business-name').attr('href');
 
-                log(`Processing result for ${getText('.info .n a')?.trim()}`);
-
                 // Get extended data from detail page
                 const res = await axios.get(`https://www.yellowpages.com${businessSlug}`);
                 const d = cheerio.load(res.data);
@@ -118,7 +116,6 @@ Apify.main(async () => {
                 let address = null;
                 const addrElem = jThis.find('.adr');
                 if (addrElem.children().length > 0) {
-                    log('Address has children');
                     address = addrElem.children().get().map((t) => t.textContent).join(', ');
                 } else {
                     address = addrElem.contents().text().trim();
