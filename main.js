@@ -126,20 +126,20 @@ Apify.main(async () => {
                     .toArray()
                     .map((c) => $(c).text().trim());
                 const rating = jThis.find('.result-rating').attr('class');
-                const rCount = getText('.result-rating .count').trim();
+                const rCount = getText('.result-rating .count')?.trim();
                 const website = jThis
                     .find('a.track-visit-website')
                     .attr('href');
-                const reviewSnippet = getText('.snippet').trim();
+                const reviewSnippet = getText('.snippet')?.trim();
                 const isInfoSnippet = reviewSnippet && reviewSnippet.includes('From Business');
                 const image = jThis.find('a.photo img').attr('src');
                 const result = {
-                    isAd: getText('.ad-pill').trim() === 'Ad' || undefined,
+                    isAd: getText('.ad-pill')?.trim() === 'Ad' || undefined,
                     url: businessSlug ? `https://www.yellowpages.com${businessSlug}` : undefined,
-                    name: getText('.info .n a').trim(),
+                    name: getText('.info .n a')?.trim(),
                     address: address.length > 0 && !address.includes('Serving the') ? address : undefined,
                     email: email ? email.split(':')[1] : undefined,
-                    phone: getText('.info .phone').trim(),
+                    phone: getText('.info .phone')?.trim(),
                     website,
                     rating: rating ? parseRating(rating) : undefined,
                     ratingCount: rCount
