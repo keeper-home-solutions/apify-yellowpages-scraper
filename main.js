@@ -116,7 +116,8 @@ Apify.main(async () => {
                 let address = null;
                 const addrElem = jThis.find('.adr');
                 if (addrElem.children().length > 0) {
-                    address = addrElem.children().get().map((t) => t.textContent).join(' ');
+                    log('Address has children');
+                    address = addrElem.children().get().map((t) => t.textContent).join(', ');
                 } else {
                     address = addrElem.contents().text().trim();
                 }
