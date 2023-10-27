@@ -186,7 +186,7 @@ Apify.main(async () => {
             if (recordCount < input.maxItems) {
                 const nextUrl = $('.pagination .next').attr('href');
 
-                if (nextUrl) {
+                if (nextUrl && !nextUrl.includes('http')) {
                     const nextPageReq = await requestQueue.addRequest({
                         url: `http://www.yellowpages.com${nextUrl}`,
                         userData: {
