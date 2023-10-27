@@ -23,12 +23,12 @@
             "editor": "requestListSources",
             "description": "List of URLs that will be crawled."
         },
-        "maxItems": {
-            "title": "Max items",
+        "maxPages": {
+            "title": "Max pages",
             "type": "integer",
             "minimum": 0,
-            "prefill": 200,
-            "description": "Maximum number of outputted results"
+            "prefill": 5,
+            "description": "Maximum number of result pages"
         },
         "extendOutputFunction": {
             "title": "Extend output function",

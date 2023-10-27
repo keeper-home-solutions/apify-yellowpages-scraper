@@ -45,7 +45,7 @@ Apify.main(async () => {
 
     if (input.startUrls) {
         for (const sUrl of input.startUrls) {
-            const request = typeof sUrl === 'string' ? { url: sUrl, userData: { baseUrl: sUrl, resultCount: 0 } } : sUrl;
+            const request = typeof sUrl === 'string' ? { url: sUrl } : sUrl;
             if (!request.url || typeof request.url !== 'string') {
                 throw new Error(`Invalid startUrl: ${JSON.stringify(sUrl)}`);
             }
@@ -94,19 +94,15 @@ Apify.main(async () => {
             request,
             $,
         }) => {
-            const { url, userData } = request;
+            const { url } = request;
 
-            log.info(JSON.stringify(userData));
-
-            // Check if current url contains userData.baseUrl
-            let recordCount = userData.baseUrl && !url.includes(userData.baseUrl) ? userData?.resultCount || 0 : 0;
+            log.info(url);
 
             // Process result list
             const results = [];
             const resultElems = $('.search-results .result');
 
             for (const r of resultElems.toArray()) {
-                recordCount += 1;
                 const jThis = $(r);
                 const getText = (selector) => {
                     const text = jThis.find(selector).text();
@@ -186,26 +182,26 @@ Apify.main(async () => {
                 // Store results and enqueue next page
                 await dataset.pushData(results);
 
-                if (recordCount < input.maxItems) {
-                    const nextUrl = $('.pagination .next').attr('href');
+                const nextUrl = $('.pagination .next').attr('href');
 
-                    if (nextUrl && !nextUrl.includes('http')) {
-                        const nextPageReq = await requestQueue.addRequest({
-                            url: `http://www.yellowpages.com${nextUrl}`,
-                            userData: {
-                                baseUrl: request.userData.baseUrl,
-                                resultCount: recordCount,
-                            },
-                        });
+                // Get page number from nextUrl (if exists). Format would look like page=2
+                const pageNum = nextUrl ? nextUrl.split('=')[1] : undefined;
 
-                        if (!nextPageReq.wasAlreadyPresent) {
-                            log.info('Found next page, adding to queue...', { url });
-                        }
-                    } else {
-                        log.info('No next page found', { url });
+                if (pageNum && pageNum > input.maxPages) {
+                    log.info('Page number is greater than maxPages, skipping...', {maxPages: input.maxPages, pageNum, nextUrl });
+                    return;
+                }
+
+                if (nextUrl && !nextUrl.includes('http')) {
+                    const nextPageReq = await requestQueue.addRequest({
+                        url: `https://www.yellowpages.com${nextUrl}`,
+                    });
+
+                    if (!nextPageReq.wasAlreadyPresent) {
+                        log.info('Found next page, adding to queue...', { url });
                     }
                 } else {
-                    log.info('Max items reached');
+                    log.info('No next page found', { url });
                 }
             }
         },
