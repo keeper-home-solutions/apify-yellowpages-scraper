@@ -96,7 +96,7 @@ Apify.main(async () => {
         }) => {
             const { url, userData } = request;
 
-            log.info(userData);
+            log.info(JSON.stringify(userData));
 
             // Check if current url contains userData.baseUrl
             let recordCount = userData.baseUrl && !url.includes(userData.baseUrl) ? userData?.resultCount || 0 : 0;
