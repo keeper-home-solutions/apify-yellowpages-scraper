@@ -45,7 +45,7 @@ Apify.main(async () => {
 
     if (input.startUrls) {
         for (const sUrl of input.startUrls) {
-            const request = typeof sUrl === 'string' ? { url: sUrl } : sUrl;
+            const request = typeof sUrl === 'string' ? { url: sUrl, userData: { baseUrl: sUrl, resultCount: 0 } } : sUrl;
             if (!request.url || typeof request.url !== 'string') {
                 throw new Error(`Invalid startUrl: ${JSON.stringify(sUrl)}`);
             }
@@ -94,13 +94,17 @@ Apify.main(async () => {
             request,
             $,
         }) => {
-            const { url } = request;
+            const { url, userData } = request;
+
+            // Check if current url contains userData.baseUrl
+            let recordCount = userData.baseUrl && !url.includes(userData.baseUrl) ? userData?.resultCount || 0 : 0;
 
             // Process result list
             const results = [];
             const resultElems = $('.search-results .result');
 
             for (const r of resultElems.toArray()) {
+                recordCount += 1;
                 const jThis = $(r);
                 const getText = (selector) => {
                     const text = jThis.find(selector).text();
@@ -174,35 +178,31 @@ Apify.main(async () => {
                 results.push(result);
             }
 
-            // Check maximum result count
-            if (input.maxItems) {
-                const count = (await dataset.getInfo()).cleanItemCount;
-                if (count + results.length >= input.maxItems) {
-                    const allowed = input.maxItems - count;
-                    if (allowed > 0) {
-                        await dataset.pushData(results.slice(0, allowed));
-                    }
-                    return process.exit(0);
-                }
-            }
-
             log.info(`Found ${results.length} results.`, { url });
 
             // Store results and enqueue next page
             await dataset.pushData(results);
 
-            const nextUrl = $('.pagination .next').attr('href');
+            if (recordCount < input.maxItems) {
+                const nextUrl = $('.pagination .next').attr('href');
 
-            if (nextUrl) {
-                const nextPageReq = await requestQueue.addRequest({
-                    url: `http://www.yellowpages.com${nextUrl}`,
-                });
+                if (nextUrl) {
+                    const nextPageReq = await requestQueue.addRequest({
+                        url: `http://www.yellowpages.com${nextUrl}`,
+                        userData: {
+                            baseUrl: request.userData.baseUrl,
+                            resultCount: recordCount,
+                        },
+                    });
 
-                if (!nextPageReq.wasAlreadyPresent) {
-                    log.info('Found next page, adding to queue...', { url });
+                    if (!nextPageReq.wasAlreadyPresent) {
+                        log.info('Found next page, adding to queue...', { url });
+                    }
+                } else {
+                    log.info('No next page found', { url });
                 }
             } else {
-                log.info('No next page found', { url });
+                log.info('Max items reached');
             }
         },
     });
