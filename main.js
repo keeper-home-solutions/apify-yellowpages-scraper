@@ -114,97 +114,99 @@ Apify.main(async () => {
                 };
                 const businessSlug = jThis.find('a.business-name').attr('href');
 
+                if (!businessSlug.includes('http')) {
                 // Get extended data from detail page
-                const res = await axios.get(`https://www.yellowpages.com${businessSlug}`);
-                const d = cheerio.load(res.data);
-                const email = d('.email-business').attr('href');
+                    const res = await axios.get(`https://www.yellowpages.com${businessSlug}`);
+                    const d = cheerio.load(res.data);
+                    const email = d('.email-business').attr('href');
 
-                let address = null;
-                const addrElem = jThis.find('.adr');
-                if (addrElem.children().length > 0) {
-                    address = addrElem
-                        .children()
+                    let address = null;
+                    const addrElem = jThis.find('.adr');
+                    if (addrElem.children().length > 0) {
+                        address = addrElem
+                            .children()
+                            .toArray()
+                            .map((c) => {
+                                const text = $(c).text().trim();
+                                return text.length > 0 ? text : undefined;
+                            })
+                            .filter((t) => t)
+                            .join(', ');
+                    } else {
+                        address = addrElem.contents().text().trim();
+                    }
+                    const categories = jThis
+                        .find('.categories a')
                         .toArray()
-                        .map((c) => {
-                            const text = $(c).text().trim();
-                            return text.length > 0 ? text : undefined;
-                        })
-                        .filter((t) => t)
-                        .join(', ');
-                } else {
-                    address = addrElem.contents().text().trim();
-                }
-                const categories = jThis
-                    .find('.categories a')
-                    .toArray()
-                    .map((c) => $(c).text().trim());
-                const rating = jThis.find('.result-rating').attr('class');
-                const rCount = getText('.result-rating .count')?.trim();
-                const website = jThis
-                    .find('a.track-visit-website')
-                    .attr('href');
-                const reviewSnippet = getText('.snippet')?.trim();
-                const isInfoSnippet = reviewSnippet && reviewSnippet.includes('From Business');
-                const image = jThis.find('a.photo img').attr('src');
-                const result = {
-                    isAd: getText('.ad-pill')?.trim() === 'Ad' || undefined,
-                    url: businessSlug ? `https://www.yellowpages.com${businessSlug}` : undefined,
-                    name: getText('.info .n a')?.trim(),
-                    address: address.length > 0 && !address.includes('Serving the') ? address : undefined,
-                    email: email ? email.split(':')[1] : undefined,
-                    phone: getText('.info .phone')?.trim(),
-                    website,
-                    rating: rating ? parseRating(rating) : undefined,
-                    ratingCount: rCount
-                        ? parseFloat(rCount.match(/\d+/)[0])
-                        : undefined,
-                    reviewSnippet: isInfoSnippet ? undefined : reviewSnippet,
-                    infoSnippet: isInfoSnippet
-                        ? reviewSnippet.slice(15)
-                        : undefined,
-                    image: image ? image.split('_')[0] : undefined,
-                    categories: categories.length > 0 ? categories : undefined,
-                };
+                        .map((c) => $(c).text().trim());
+                    const rating = jThis.find('.result-rating').attr('class');
+                    const rCount = getText('.result-rating .count')?.trim();
+                    const website = jThis
+                        .find('a.track-visit-website')
+                        .attr('href');
+                    const reviewSnippet = getText('.snippet')?.trim();
+                    const isInfoSnippet = reviewSnippet && reviewSnippet.includes('From Business');
+                    const image = jThis.find('a.photo img').attr('src');
+                    const result = {
+                        isAd: getText('.ad-pill')?.trim() === 'Ad' || undefined,
+                        url: businessSlug ? `https://www.yellowpages.com${businessSlug}` : undefined,
+                        name: getText('.info .n a')?.trim(),
+                        address: address.length > 0 && !address.includes('Serving the') ? address : undefined,
+                        email: email ? email.split(':')[1] : undefined,
+                        phone: getText('.info .phone')?.trim(),
+                        website,
+                        rating: rating ? parseRating(rating) : undefined,
+                        ratingCount: rCount
+                            ? parseFloat(rCount.match(/\d+/)[0])
+                            : undefined,
+                        reviewSnippet: isInfoSnippet ? undefined : reviewSnippet,
+                        infoSnippet: isInfoSnippet
+                            ? reviewSnippet.slice(15)
+                            : undefined,
+                        image: image ? image.split('_')[0] : undefined,
+                        categories: categories.length > 0 ? categories : undefined,
+                    };
 
-                if (extendOutputFunction) {
-                    try {
-                        Object.assign(
-                            result,
-                            await extendOutputFunction($, jThis),
-                        );
-                    } catch (e) {
-                        log.exception(e, 'extendOutputFunction error:');
+                    if (extendOutputFunction) {
+                        try {
+                            Object.assign(
+                                result,
+                                await extendOutputFunction($, jThis),
+                            );
+                        } catch (e) {
+                            log.exception(e, 'extendOutputFunction error:');
+                        }
                     }
+
+                    results.push(result);
                 }
 
-                results.push(result);
-            }
+                log.info(`Found ${results.length} results.`, { url });
 
-            log.info(`Found ${results.length} results.`, { url });
+                // Store results and enqueue next page
+                await dataset.pushData(results);
 
-            // Store results and enqueue next page
-            await dataset.pushData(results);
+                if (recordCount < input.maxItems) {
+                    const nextUrl = $('.pagination .next').attr('href');
 
-            if (recordCount < input.maxItems) {
-                const nextUrl = $('.pagination .next').attr('href');
+                    if (nextUrl && !nextUrl.includes('http')) {
+                        const nextPageReq = await requestQueue.addRequest({
+                            url: `http://www.yellowpages.com${nextUrl}`,
+                            userData: {
+                                baseUrl: request.userData.baseUrl,
+                                resultCount: recordCount,
+                            },
+                        });
 
-                if (nextUrl && !nextUrl.includes('http')) {
-                    const nextPageReq = await requestQueue.addRequest({
-                        url: `http://www.yellowpages.com${nextUrl}`,
-                        userData: {
-                            baseUrl: request.userData.baseUrl,
-                            resultCount: recordCount,
-                        },
-                    });
-
-                    if (!nextPageReq.wasAlreadyPresent) {
-                        log.info('Found next page, adding to queue...', { url });
+                        if (!nextPageReq.wasAlreadyPresent) {
+                            log.info('Found next page, adding to queue...', { url });
+                        }
+                    } else {
+                        log.info('No next page found', { url });
                     }
                 } else {
-                    log.info('No next page found', { url });
+                    log.info('Max items reached');
                 }
-            } else {
-                log.info('Max items reached');
             }
         },
     });
