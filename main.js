@@ -96,7 +96,7 @@ Apify.main(async () => {
         }) => {
             const { url } = request;
 
-            log.info(url);
+            log.info(`Current URL: ${url}`);
 
             // Process result list
             const results = [];
@@ -176,33 +176,42 @@ Apify.main(async () => {
 
                     results.push(result);
                 }
+            }
 
-                log.info(`Found ${results.length} results.`, { url });
+            log.info(`Found ${results.length} results.`, { url });
 
-                // Store results and enqueue next page
-                await dataset.pushData(results);
+            // Store results and enqueue next page
+            await dataset.pushData(results);
 
-                const nextUrl = $('.pagination .next').attr('href');
+            const nextUrl = $('.pagination .next').attr('href');
+
+            if (nextUrl && !nextUrl.includes('http')) {
+                const nextFullUrl = `https://www.yellowpages.com${nextUrl}`;
 
                 // Get page number from nextUrl (if exists). Format would look like page=2
-                const pageNum = nextUrl ? nextUrl.split('=')[1] : undefined;
+                const nextPageNumber = nextUrl ? parseInt(nextUrl.split('page=')[1], 10) : undefined;
 
-                if (pageNum && pageNum > input.maxPages) {
-                    log.info('Page number is greater than maxPages, skipping...', {maxPages: input.maxPages, pageNum, nextUrl });
-                    return;
+                log.info('Page number', { pageNum: nextPageNumber });
+
+                if (nextPageNumber && nextPageNumber > input.maxPages) {
+                    log.warning('Page number is greater than maxPages, skipping...', { maxPages: input.maxPages, pageNum: nextPageNumber, nextUrl });
                 }
 
-                if (nextUrl && !nextUrl.includes('http')) {
-                    const nextPageReq = await requestQueue.addRequest({
-                        url: `https://www.yellowpages.com${nextUrl}`,
-                    });
+                // Ensure that the nextFullUrl is only enqueued if it's derived from an input.startUrls entry
+                const matchedStartUrl = input.startUrls.find((startUrl) => {
+                    return nextFullUrl.includes(startUrl);
+                });
 
+                if (matchedStartUrl && (nextPageNumber && nextPageNumber <= input.maxPages)) {
+                    const nextPageReq = await requestQueue.addRequest({
+                        url: nextFullUrl,
+                    });
                     if (!nextPageReq.wasAlreadyPresent) {
                         log.info('Found next page, adding to queue...', { url });
                     }
-                } else {
-                    log.info('No next page found', { url });
                 }
+            } else {
+                log.warning('No next page found', { url });
             }
         },
     });
